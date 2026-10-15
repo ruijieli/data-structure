@@ -1,6 +1,0 @@
-syms x y
-f1 = 4*x^4+2*x+1
-f2 = x^5+2*x+1
-
-
-polyplus(f1,f2)
