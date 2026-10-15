@@ -1,0 +1,790 @@
+---
+title: "时间复杂度"
+subtitle: "从基本操作计数到大 O 分析"
+author: "西南交通大学 李瑞杰"
+jupyter: python3
+format:
+  revealjs:
+    theme: simple
+    highlight-style: github
+    slide-number: true
+    progress: true
+    controls: true
+    chalkboard: true
+    transition: fade
+    background-transition: fade
+    center: false
+    width: 1280
+    height: 720
+    margin: 0.06
+execute:
+  echo: true
+  output: true
+  warning: false
+  freeze: false
+  cache: false
+---
+
+<style>
+:root {
+  --course-navy: #102a43;
+  --course-blue: #1769aa;
+  --course-cyan: #1fa2b8;
+  --course-ink: #172b4d;
+  --course-muted: #5f6c7b;
+  --course-line: #d9e2ec;
+  --course-soft: #f4f8fb;
+}
+
+.reveal {
+  color: var(--course-ink);
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 31px;
+}
+
+.reveal .slides {
+  text-align: left;
+}
+
+.reveal .slides section {
+  box-sizing: border-box;
+  padding: 34px 58px;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3 {
+  color: var(--course-navy);
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+.reveal h2 {
+  margin: 0 0 0.58em;
+  padding-left: 0.36em;
+  border-left: 8px solid var(--course-blue);
+  font-size: 1.58em;
+  line-height: 1.12;
+}
+
+.reveal h3 {
+  margin: 0.5em 0 0.2em;
+  color: var(--course-blue);
+  font-size: 1.04em;
+}
+
+.reveal p,
+.reveal li {
+  line-height: 1.48;
+}
+
+.reveal ul,
+.reveal ol {
+  margin-left: 1.25em;
+}
+
+.reveal li::marker {
+  color: var(--course-blue);
+}
+
+.reveal strong {
+  color: var(--course-blue);
+}
+
+.reveal .math.display {
+  margin: 0.55em 0;
+  color: var(--course-navy);
+}
+
+.reveal pre {
+  width: 100%;
+  margin: 0.4em 0;
+  border: 1px solid var(--course-line);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.08);
+  font-size: 0.56em;
+  line-height: 1.36;
+}
+
+.reveal pre code {
+  max-height: 420px;
+  padding: 0.75em 0.9em;
+}
+
+.reveal .cell-output pre {
+  border-left: 5px solid #2f9e6f;
+  background: #f0faf5;
+  box-shadow: none;
+}
+
+.reveal table {
+  width: 100%;
+  margin: 0.4em auto;
+  border-collapse: collapse;
+  font-size: 0.72em;
+}
+
+.reveal table thead th {
+  border-bottom: 3px solid var(--course-blue);
+  background: #eaf2f8;
+  color: var(--course-navy);
+}
+
+.reveal table th,
+.reveal table td {
+  padding: 0.42em 0.62em;
+  border-bottom: 1px solid var(--course-line);
+}
+
+.reveal .columns {
+  gap: 1.1em;
+  align-items: flex-start;
+}
+
+.reveal .callout {
+  border-radius: 7px;
+  box-shadow: none;
+  font-size: 0.86em;
+}
+
+.reveal .fragment.visible {
+  color: var(--course-blue);
+  font-weight: 650;
+}
+
+.reveal .slide-number {
+  right: 20px;
+  bottom: 16px;
+  color: var(--course-muted);
+  background: transparent;
+  font-size: 15px;
+}
+
+#title-slide {
+  height: 100%;
+  padding: 150px 90px 80px;
+  color: white;
+  text-align: left;
+  background:
+    linear-gradient(118deg, rgba(10, 35, 64, 0.98), rgba(23, 105, 170, 0.92)),
+    radial-gradient(circle at 82% 22%, rgba(31, 162, 184, 0.65), transparent 34%);
+}
+
+#title-slide h1 {
+  margin: 0 0 0.2em;
+  color: white;
+  font-size: 2.35em;
+}
+
+#title-slide .subtitle {
+  margin: 0 0 2.2em;
+  color: #d9eff8;
+  font-size: 1.05em;
+}
+
+#title-slide .author {
+  color: white;
+  font-size: 0.76em;
+}
+
+.complexity-formula {
+  margin: 0.85em 0;
+  padding: 0.38em 0;
+  text-align: center;
+  color: var(--course-navy);
+  font-size: 1.22em;
+  font-weight: 600;
+  border-top: 1px solid var(--course-line);
+  border-bottom: 1px solid var(--course-line);
+}
+
+.formula-variable {
+  font-family: "Times New Roman", serif;
+  font-style: italic;
+}
+
+.complexity-highlight {
+  color: var(--course-blue);
+}
+
+.pythontutor-link {
+  display: inline-block;
+  margin-top: 0.28em;
+  color: var(--course-blue);
+  font-size: 0.58em;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pythontutor-link:hover {
+  color: var(--course-cyan);
+  text-decoration: underline;
+}
+</style>
+
+## 本节目标
+
+
+- 解释时间复杂度为什么关注**规模增大时**的运行趋势
+- 使用大 O 记号描述常见算法的时间复杂度
+- 通过循环结构分析一段 Python 代码
+- 比较不同算法并选择更合适的方案
+
+---
+
+## 一个问题
+
+在一组无序数据中查找目标值：
+
+```{python}
+def contains(values, target):
+    for value in values:
+        if value == target:
+            return True
+    return False
+
+values = [3, 8, 2, 5]
+print(contains(values, 2))
+```
+
+当列表长度从 10 增加到 1 000 000 时，程序会发生什么变化？
+
+::: {.fragment}
+最坏情况下，要比较列表中的每一个元素。
+:::
+
+---
+
+## 什么是时间复杂度？
+
+**时间复杂度**描述算法执行次数随输入规模 $n$ 增长的变化趋势。
+
+```{=html}
+<div class="complexity-formula">
+  <span class="formula-variable">T</span>(<span class="formula-variable">n</span>)
+  = 算法基本操作的<span class="complexity-highlight">执行次数</span>
+</div>
+```
+
+- 它不是某台电脑上的实际秒数
+- 它关注输入足够大时的增长速度
+- 它帮助我们在运行程序前比较算法
+
+---
+
+## 基本操作的执行次数
+
+:::: {.columns}
+
+::: {.column width="57%"}
+
+```{python}
+def count_additions(n):
+    count = 0
+    total = 0
+    for value in range(n):
+        total += value  # 基本操作
+        count += 1
+    return count
+
+for n in (3, 5, 10):
+    print(f"n={n}, 执行次数={count_additions(n)}")
+```
+
+:::
+
+::: {.column width="43%"}
+
+**基本操作**是算法中反复执行、能够代表主要工作量的一步。
+
+本例选择：
+
+```python
+total += value
+```
+
+列表包含 $n$ 个元素，这条加法语句就执行 $n$ 次：
+
+$$
+T(n)=n=O(n)
+$$
+
+:::
+
+::::
+
+---
+
+## 为什么不直接计时？
+
+实际运行时间会受很多因素影响：
+
+- CPU、内存和操作系统
+- 编程语言与编译/解释方式
+- 输入数据的具体内容
+
+时间复杂度剥离这些偶然因素，只保留与问题规模有关的核心规律。
+
+---
+
+## 大 O 记号
+
+若存在常数 $c$ 和 $n_0$，使得当 $n \geq n_0$ 时：
+
+$$
+0 \leq T(n) \leq c \cdot f(n)
+$$
+
+则记作：
+
+$$
+T(n) = O(f(n))
+$$
+
+直观地说：当 $n$ 很大时，$T(n)$ 的增长不会比 $f(n)$ 更快。
+
+---
+
+## 化简规则
+
+### 忽略常数因子
+
+$$
+3n = O(n), \qquad 100n^2 = O(n^2)
+$$
+
+### 保留最高阶项
+
+$$
+n^2 + 20n + 1 = O(n^2)
+$$
+
+::: {.callout-important}
+大 O 描述增长等级，不是精确的执行次数。
+:::
+
+---
+
+## 常见增长率
+
+| 时间复杂度 | 名称 | 典型例子 |
+|---|---|---|
+| $O(1)$ | 常数时间 | 按下标访问列表元素 |
+| $O(\log n)$ | 对数时间 | 二分查找 |
+| $O(n)$ | 线性时间 | 遍历列表 |
+| $O(n \log n)$ | 线性对数时间 | 高效排序 |
+| $O(n^2)$ | 平方时间 | 简单的双重比较 |
+| $O(2^n)$ | 指数时间 | 枚举所有子集 |
+
+---
+
+## 增长率的差异
+
+```{=html}
+<div class="growth-demo">
+  <div class="growth-controls">
+    <label for="growth-max-n">最大输入规模 n：</label>
+    <input id="growth-max-n" type="number" min="10" max="1000000" step="10" value="100">
+    <button id="growth-run" type="button">运行并绘图</button>
+    <span id="growth-values"></span>
+  </div>
+  <canvas id="growth-chart" width="1100" height="390" aria-label="常见时间复杂度增长率对比图"></canvas>
+  <div class="growth-note">纵轴采用对数刻度，便于同时观察数量级差异。</div>
+</div>
+```
+
+<style>
+.growth-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 0.25em;
+  font-size: 0.6em;
+}
+.growth-controls input {
+  width: 8em;
+  padding: 0.25em 0.4em;
+  font-size: 1em;
+}
+.growth-controls button {
+  padding: 0.28em 0.7em;
+  font-size: 1em;
+  cursor: pointer;
+}
+#growth-values {
+  color: #555;
+  white-space: nowrap;
+}
+#growth-chart {
+  display: block;
+  width: 100%;
+  height: 390px;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  background: #fff;
+}
+.growth-note {
+  margin-top: 0.2em;
+  color: #666;
+  font-size: 0.45em;
+  text-align: right;
+}
+</style>
+
+<script>
+(() => {
+  const input = document.getElementById("growth-max-n");
+  const button = document.getElementById("growth-run");
+  const canvas = document.getElementById("growth-chart");
+  const values = document.getElementById("growth-values");
+  if (!input || !button || !canvas || !values) return;
+
+  const series = [
+    { label: "O(1)", color: "#7a5195", fn: () => 1 },
+    { label: "O(log₂ n)", color: "#2f7ed8", fn: n => Math.log2(n) },
+    { label: "O(n)", color: "#00a676", fn: n => n },
+    { label: "O(n log₂ n)", color: "#f28e2b", fn: n => n * Math.log2(n) },
+    { label: "O(n²)", color: "#d62728", fn: n => n * n }
+  ];
+
+  const format = number => Math.round(number).toLocaleString("zh-CN");
+
+  function draw() {
+    const maxN = Math.min(1000000, Math.max(10, Number(input.value) || 100));
+    input.value = maxN;
+
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+    const plot = { left: 82, top: 46, right: width - 28, bottom: height - 50 };
+    const maxY = maxN * maxN;
+    const x = n => plot.left + (n / maxN) * (plot.right - plot.left);
+    const y = result => plot.bottom - (Math.log10(Math.max(1, result)) / Math.log10(maxY)) * (plot.bottom - plot.top);
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.font = "18px sans-serif";
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#d9dee5";
+    ctx.fillStyle = "#56606b";
+
+    for (let i = 0; i <= 4; i++) {
+      const px = plot.left + (i / 4) * (plot.right - plot.left);
+      const n = (i / 4) * maxN;
+      ctx.beginPath(); ctx.moveTo(px, plot.top); ctx.lineTo(px, plot.bottom); ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.fillText(format(n), px, plot.bottom + 28);
+    }
+
+    const maxPower = Math.ceil(Math.log10(maxY));
+    for (let power = 0; power <= maxPower; power += Math.max(1, Math.ceil(maxPower / 5))) {
+      const result = 10 ** power;
+      const py = y(result);
+      ctx.beginPath(); ctx.moveTo(plot.left, py); ctx.lineTo(plot.right, py); ctx.stroke();
+      ctx.textAlign = "right";
+      ctx.fillText(power === 0 ? "1" : `10^${power}`, plot.left - 10, py + 6);
+    }
+
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(plot.left, plot.top); ctx.lineTo(plot.left, plot.bottom); ctx.lineTo(plot.right, plot.bottom);
+    ctx.stroke();
+    ctx.fillStyle = "#333";
+    ctx.textAlign = "center";
+    ctx.fillText("输入规模 n", (plot.left + plot.right) / 2, height - 8);
+
+    series.forEach((item, index) => {
+      ctx.strokeStyle = item.color;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      for (let i = 1; i <= 240; i++) {
+        const n = 1 + ((maxN - 1) * i) / 240;
+        const px = x(n);
+        const py = y(item.fn(n));
+        if (i === 1) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      const legendX = plot.left + index * 190;
+      ctx.fillStyle = item.color;
+      ctx.fillRect(legendX, 16, 28, 5);
+      ctx.fillStyle = "#333";
+      ctx.textAlign = "left";
+      ctx.fillText(item.label, legendX + 36, 25);
+    });
+
+    values.textContent = `n² = ${format(maxY)}；n log₂ n ≈ ${format(maxN * Math.log2(maxN))}`;
+  }
+
+  button.addEventListener("click", draw);
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter") draw();
+  });
+  draw();
+})();
+</script>
+
+---
+
+## 分析循环：$O(n)$
+
+```{python}
+def sum_values(values):
+    total = 0
+    for value in values:
+        total += value
+    return total
+
+print(sum_values([1, 2, 3, 4, 5]))
+```
+
+- 循环执行 $n$ 次
+- 每次循环为常数时间
+
+$$
+T(n) = an + b = O(n)
+$$
+
+---
+
+## 嵌套循环：$O(n^2)$
+
+```{python}
+def has_duplicate(values):
+    for i in range(len(values)):
+        for j in range(i + 1, len(values)):
+            if values[i] == values[j]:
+                return True
+    return False
+
+print(has_duplicate([4, 1, 7, 4]))
+```
+
+最坏情况下大约比较：
+
+$$
+\frac{n(n - 1)}{2}
+$$
+
+因此时间复杂度是 $O(n^2)$。
+
+---
+
+## 连续代码块：相加后取最大项
+
+```{python}
+values = [10, 20, 30]
+for value in values:          # O(n)
+    pass
+
+for i in range(len(values)):  # O(n)
+    for j in range(len(values)):
+        pass                  # O(n²)
+
+print("两个循环块执行完成")
+```
+
+$$
+T(n) = O(n) + O(n^2) = O(n^2)
+$$
+
+**规则：**连续语句的复杂度相加，最终保留最高阶项。
+
+---
+
+## 对半缩小：$O(\log n)$
+
+```{python}
+def binary_search(values, target):
+    left, right = 0, len(values) - 1
+    while left <= right:
+        middle = (left + right) // 2
+        if values[middle] == target:
+            return middle
+        if values[middle] < target:
+            left = middle + 1
+        else:
+            right = middle - 1
+    return -1
+
+print(binary_search([1, 3, 5, 7, 9], 7))
+```
+
+每次比较都将搜索范围缩小一半，因此：
+
+$$
+\frac{n}{2^k} = 1 \Rightarrow k = \log_2 n
+$$
+
+---
+
+## 关键前提：二分查找需要有序
+
+二分查找快，但有一个前提：
+
+::: {.callout-warning}
+输入序列必须已经按同一规则排序。
+:::
+
+- 已排序、只查一次：二分查找 $O(\log n)$
+- 无序、只查一次：线性查找 $O(n)$ 通常更合适
+- 无序、查很多次：先排序 $O(n\log n)$，再多次二分查找
+
+---
+
+## 最好、最坏与平均情况
+
+以线性查找为例：
+
+| 情况 | 目标位置 | 时间复杂度 |
+|---|---|---|
+| 最好情况 | 第一个元素 | $O(1)$ |
+| 最坏情况 | 最后一个元素或不存在 | $O(n)$ |
+| 平均情况 | 中间附近 | $O(n)$ |
+
+默认讨论大 O 时，通常采用**最坏情况**，因为它提供性能上界。
+
+---
+
+## 递归示例
+
+```{python}
+def factorial(n):
+    if n <= 1:
+        return 1
+    return n * factorial(n - 1)
+
+print(factorial(5))
+```
+
+- 递归深度为 $n$
+- 每一层只做常数工作
+
+时间复杂度：$O(n)$  
+额外空间复杂度：$O(n)$（递归调用栈）
+
+---
+
+## 易混淆点
+
+### $O(n^2)$ 不等于“有两个循环”
+
+```{python}
+n = 5
+for i in range(n):
+    pass
+
+for j in range(n):
+    pass
+
+print("两个循环块执行完成")
+```
+
+两个循环是**先后执行**，总次数为 $n+n=2n$：
+
+$$
+O(n) + O(n) = O(n)
+$$
+
+只有循环相互嵌套时，才会相乘。
+
+---
+
+## 课堂练习
+
+分析下面代码的时间复杂度：
+
+```{python}
+def count_pairs(values):
+    count = 0
+    for i in range(len(values)):
+        for j in range(i, len(values), 2):
+            count += 1
+    return count
+
+print(count_pairs([1, 2, 3, 4, 5, 6]))
+```
+
+::: {.fragment}
+**答案：**$O(n^2)$。内层循环虽然每次步长为 2，但仍与 $n$ 成正比；常数不会改变复杂度等级。
+:::
+
+---
+
+## 选择算法时的思考
+
+1. 输入规模 $n$ 可能有多大？
+2. 操作需要执行一次，还是重复很多次？
+3. 数据是否已排序？是否允许修改数据？
+4. 时间与空间能否互换？
+5. 最坏情况是否可接受？
+
+::: {.callout-tip}
+先选择合适的数据结构和算法，再考虑微小的代码优化。
+:::
+
+---
+
+## 小结
+
+- 时间复杂度描述算法随输入规模增长的趋势
+- 大 O 忽略常数和低阶项，关注最高阶增长率
+- 顺序结构相加，嵌套结构相乘，规模减半常见 $O(\log n)$
+- 常见复杂度从优到劣：
+
+$$
+O(1) < O(\log n) < O(n) < O(n\log n) < O(n^2) < O(2^n)
+$$
+
+---
+
+## 思考题
+
+如何将“判断列表中是否有重复元素”的 $O(n^2)$ 解法，改进为更快的算法？
+
+提示：能否利用集合（`set`）记录已经出现过的元素？
+
+<script>
+const addPythonTutorPanels = () => {
+  if (window.__pythonTutorPanelsAdded) {
+    return;
+  }
+  window.__pythonTutorPanelsAdded = true;
+
+  document.querySelectorAll(".cell pre.sourceCode").forEach((sourceBlock) => {
+    const codeElement = sourceBlock.querySelector("code");
+    if (
+      !codeElement ||
+      sourceBlock.dataset.pythonTutorAttached === "true" ||
+      sourceBlock.parentElement?.querySelector(".pythontutor-link")
+    ) {
+      return;
+    }
+
+    const code = codeElement.textContent.trim();
+    if (!code) {
+      return;
+    }
+    sourceBlock.dataset.pythonTutorAttached = "true";
+
+    const link = document.createElement("a");
+    link.className = "pythontutor-link";
+    link.textContent = "▶ 打开 Python Tutor，逐步查看变量和调用栈 ↗";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.href =
+      "https://pythontutor.com/visualize.html#code=" +
+      encodeURIComponent(code) +
+      "&mode=display&py=311&cumulative=false&curInstr=0";
+    sourceBlock.after(link);
+  });
+};
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", addPythonTutorPanels, { once: true });
+} else {
+  addPythonTutorPanels();
+}
+</script>
